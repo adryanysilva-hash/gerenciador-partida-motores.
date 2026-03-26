@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>SCADA - Motor</title>
+
+  <!-- Chart.js (gráfico) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+
+    .box {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+    }
+
+    input, select {
+      width: 100%;
+      margin: 5px 0;
+      padding: 8px;
+    }
+
+    button {
+      padding: 10px;
+      background: #22c55e;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .resultado {
+      margin-top: 15px;
+      background: #334155;
+      padding: 10px;
+    }
+
+    img {
+      width: 100%;
+      margin-top: 15px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>⚡ Sistema de Análise de Motor</h1>
+
+  <div class="box">
+
+    <label>Tipo de Partida</label>
+    <select id="tipo" onchange="trocarImagem()">
+      <option value="direta">Direta</option>
+      <option value="reversora">Reversora</option>
+    </select>
+
+    <label>Corrente (A)</label>
+    <input type="number" id="corrente">
+
+    <label>Tempo (s)</label>
+    <input type="number" id="tempo">
+
+    <label><input type="checkbox" id="K1"> K1</label>
+    <label><input type="checkbox" id="K2"> K2</label>
+
+    <button onclick="analisar()">Analisar</button>
+
+    <div class="resultado" id="resultado"></div>
+
+    <!-- Imagem -->
+    <img id="imgSistema" src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Direct_on_line_starter_diagram.png">
+
+    <!-- Gráfico -->
+    <canvas id="grafico"></canvas>
+
+  </div>
+
+<script>
+let chart;
+
+function trocarImagem() {
+  const tipo = document.getElementById("tipo").value;
+  const img = document.getElementById("imgSistema");
+
+  if (tipo === "direta") {
+    img.src = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Direct_on_line_starter_diagram.png";
+  } else {
+    img.src = "https://upload.wikimedia.org/wikipedia/commons/6/6a/Reversing_starter_diagram.png";
+  }
+}
+
+function analisar() {
+  const tipo = document.getElementById("tipo").value;
+  const corrente = parseFloat(document.getElementById("corrente").value);
+  const tempo = parseFloat(document.getElementById("tempo").value);
+  const K1 = document.getElementById("K1").checked;
+  const K2 = document.getElementById("K2").checked;
+
+  let falhas = [];
+
+  if (tipo === "reversora" && K1 && K2) {
+    falhas.push("❌ Curto entre contatores");
+  }
+
+  if (corrente > 10) {
+    falhas.push("⚠️ Sobrecorrente");
+  }
+
+  if (tempo > 5) {
+    falhas.push("⚠️ Tempo alto");
+  }
+
+  let resultado = document.getElementById("resultado");
+
+  if (falhas.length === 0) {
+    resultado.innerHTML = "✅ Sistema OK";
+  } else {
+    resultado.innerHTML = falhas.join("<br>");
+  }
+
+  gerarGrafico(corrente, tempo);
+}
+
+function gerarGrafico(corrente, tempo) {
+  const ctx = document.getElementById("grafico");
+
+  if (chart) {
+    chart.destroy();
+  }
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ["0s", tempo/2 + "s", tempo + "s"],
+      datasets: [{
+        label: "Corrente (A)",
+        data: [0, corrente, corrente * 0.7],
+        borderColor: "lime",
+        fill: false
+      }]
+    }
+  });
+}
+</script>
+
+</body>
+</html>
